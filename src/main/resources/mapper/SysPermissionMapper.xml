@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhangwenit.security.demo.mapper.SysPermissionMapper">
+
+    <resultMap id="menuMap" type="com.zhangwenit.security.demo.dto.Menu">
+        <id column="id" property="id" jdbcType="VARCHAR"/>
+        <result column="url" property="url" jdbcType="VARCHAR"/>
+        <result column="path" property="path" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="component" property="component"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="iconCls" property="iconCls" jdbcType="VARCHAR"/>
+        <result column="keepAlive" property="keepAlive" jdbcType="BIT"/>
+        <result column="pid" property="pid" jdbcType="VARCHAR"/>
+        <result column="requireAuth" property="requireAuth"/>
+
+        <collection property="children" ofType="com.zhangwenit.security.demo.dto.Menu">
+            <id column="id2" property="id" jdbcType="VARCHAR"/>
+            <result column="url2" property="url" jdbcType="VARCHAR"/>
+            <result column="path2" property="path" jdbcType="VARCHAR"/>
+            <result column="description2" property="description" jdbcType="VARCHAR"/>
+            <result column="component2" property="component"/>
+            <result column="name2" property="name" jdbcType="VARCHAR"/>
+            <result column="iconCls2" property="iconCls" jdbcType="VARCHAR"/>
+            <result column="keepAlive2" property="keepAlive" jdbcType="BIT"/>
+            <result column="pid2" property="pid" jdbcType="VARCHAR"/>
+            <result column="requireAuth2" property="requireAuth"/>
+
+            <collection property="children" ofType="com.zhangwenit.security.demo.dto.Menu">
+                <id column="id3" property="id" jdbcType="VARCHAR"/>
+                <result column="url3" property="url" jdbcType="VARCHAR"/>
+                <result column="path3" property="path" jdbcType="VARCHAR"/>
+                <result column="description3" property="description" jdbcType="VARCHAR"/>
+                <result column="component3" property="component"/>
+                <result column="name3" property="name" jdbcType="VARCHAR"/>
+                <result column="iconCls3" property="iconCls" jdbcType="VARCHAR"/>
+                <result column="keepAlive3" property="keepAlive" jdbcType="BIT"/>
+                <result column="pid3" property="pid" jdbcType="VARCHAR"/>
+                <result column="requireAuth3" property="requireAuth"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="findAll" resultType="com.zhangwenit.security.demo.dto.Permission">
+      SELECT * from sys_permission where is_delete = 0 order by curr_level desc
+    </select>
+
+    <select id="findAllPermissionByUserId" parameterType="java.lang.String"
+            resultType="com.zhangwenit.security.demo.dto.Permission">
+      select distinct p.*
+		from sys_user_role sru
+        LEFT JOIN sys_role_permission spr on spr.sys_role_id=sru.sys_role_id
+        LEFT JOIN sys_permission p on p.id =spr.sys_permission_id
+        where sru.sys_user_id = #{userId} and p.is_delete = 0 order by p.sid asc
+    </select>
+
+    <select id="findAllMenuPermission" resultType="com.zhangwenit.security.demo.dto.Permission">
+      select p.* from sys_permission p where p.is_menu = 1 and p.is_delete = 0 order by p.sid asc
+    </select>
+
+    <select id="findAllRoleByUserId" parameterType="java.lang.String"
+            resultType="com.zhangwenit.security.demo.dto.SysRole">
+     SELECT
+        r.id,
+        r.`name`,
+        r.description
+    FROM
+	  sys_user u
+	LEFT JOIN sys_user_role sur ON u.id = sur.sys_user_id
+	LEFT JOIN sys_role r ON sur.sys_role_id = r.id
+    WHERE u.id=#{userId} and r.is_delete = 0 and sur.is_delete = 0
+    </select>
+
+    <select id="findAllRolePermission" resultType="com.zhangwenit.security.demo.dto.RolePermission">
+        SELECT r.`name` AS roleName,rp.sys_role_id AS roleId,rp.sys_permission_id AS permissionId
+         FROM sys_role r INNER JOIN sys_role_permission rp ON r.id = rp.sys_role_id where r.is_delete = 0 and rp.is_delete = 0
+    </select>
+
+</mapper>
