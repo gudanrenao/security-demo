@@ -1,5 +1,7 @@
 package com.zhangwenit.security.demo.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.titan.common.util.FieldChecker;
@@ -7,10 +9,14 @@ import com.zhangwenit.security.demo.dto.Menu;
 import com.zhangwenit.security.demo.dto.Permission;
 import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.db.PageInfo;
+import com.zhangwenit.security.demo.dto.req.SysUserModifyReq;
+import com.zhangwenit.security.demo.dto.req.SysUserSearch;
 import com.zhangwenit.security.demo.dto.req.UpdateUserRole;
 import com.zhangwenit.security.demo.entity.SysPermissionEntity;
 import com.zhangwenit.security.demo.entity.SysUserEntity;
 import com.zhangwenit.security.demo.entity.SysUserRoleEntity;
+import com.zhangwenit.security.demo.enums.DictEnum;
 import com.zhangwenit.security.demo.mapper.SysPermissionMapper;
 import com.zhangwenit.security.demo.mapper.SysRoleMapper;
 import com.zhangwenit.security.demo.mapper.SysUserMapper;
@@ -18,6 +24,8 @@ import com.zhangwenit.security.demo.mapper.SysUserRoleMapper;
 import com.zhangwenit.security.demo.utils.DatabaseUtils;
 import com.zhangwenit.security.demo.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -111,8 +119,26 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @param keywords
      * @return
      */
-    public List<SysUser> userSearchByKeywords(String keywords) {
-        return sysUserMapper.userSearchByKeywords(keywords, SecurityUtils.getMerchantId(),SecurityUtils.getUserId());
+    public List<SysUser> userSearchByKeywords(final String keywords) {
+        return sysUserMapper.userSearchByKeywords(keywords, SecurityUtils.getMerchantId(), SecurityUtils.getUserId());
+    }
+
+    /**
+     * 条件查询账号列表
+     *
+     * @param criteria
+     * @return
+     */
+    public IPage<SysUser> userSearch(final SysUserSearch criteria) {
+        IPage<SysUserEntity> page = new PageInfo<>(criteria.getCurrentPage(), criteria.getPageSize(), criteria);
+        LambdaQueryWrapper<SysUserEntity> qw = Wrappers.<SysUserEntity>lambdaQuery()
+                .eq(SysUserEntity::getMerchantId, SecurityUtils.getMerchantId())
+                .ne(SysUserEntity::getId, SecurityUtils.getUserId())
+                .like(StringUtils.isNotEmpty(criteria.getPhone()), SysUserEntity::getPhone, criteria.getPhone())
+                .eq(criteria.getEnabled() != null, SysUserEntity::getEnabled, criteria.getEnabled())
+                .and(StringUtils.isNotEmpty(criteria.getName()), e -> e.like(SysUserEntity::getName, criteria.getName()).or().like(SysUserEntity::getUsername, criteria.getName()))
+                .eq(SysUserEntity::getType, DictEnum.SysUserType.COMMON);
+        return sysUserMapper.selectPage(page, qw).convert(SysUser::new);
     }
 
     /**
@@ -126,7 +152,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         FieldChecker.assertNotEmpty(sysUser.getId(), "账号Id不能为空");
         SysUserEntity sysUserEntity = sysUserMapper.selectById(sysUser.getId());
         if (sysUser.getEnabled() != null) {
-            if (sysUser.getEnabled() != 1 && sysUser.getEnabled() != 0) {
+            if (sysUser.getEnabled() != DictEnum.SysUserEnabled.YES && sysUser.getEnabled() != DictEnum.SysUserEnabled.NO) {
                 throw new IllegalArgumentException("状态值设置有误");
             }
             sysUserEntity.setEnabled(sysUser.getEnabled());
@@ -141,7 +167,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @param userId
      * @return
      */
-    public SysUser getUserById(String userId) {
+    public SysUser getUserById(final String userId) {
         return sysUserMapper.getUserById(userId);
     }
 
@@ -177,5 +203,38 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
             }
         }
         log.debug("updateUserRoles 已添加用户角色数量:[{}]", add);
+    }
+
+    /**
+     * 新建或修改账号
+     *
+     * @param sysUserModifyReq
+     */
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void user(SysUserModifyReq sysUserModifyReq) {
+        SysUserEntity sysUserEntity = null;
+        boolean isNew = false;
+        if (StringUtils.isEmpty(sysUserModifyReq.getId())) {
+            isNew = true;
+            sysUserEntity = new SysUserEntity().setId(UUID.randomUUID().toString())
+                    .setMerchantId(SecurityUtils.getMerchantId())
+                    .setEnabled(DictEnum.SysUserEnabled.YES).setType(DictEnum.SysUserType.COMMON);
+        } else {
+            sysUserEntity = sysUserMapper.selectById(sysUserModifyReq.getId());
+            FieldChecker.assertNotNull(sysUserEntity, "未查询到该账号");
+        }
+        //更新基本信息
+        sysUserEntity.setName(sysUserModifyReq.getName()).setUsername(sysUserModifyReq.getUsername()).setPhone(sysUserModifyReq.getPhone()).setHeadUrl(sysUserModifyReq.getHeadUrl()).setRemark(sysUserModifyReq.getRemark());
+        //密码是否更改
+        if (!sysUserModifyReq.getPassword().equals(sysUserEntity.getPassword())) {
+            sysUserEntity.setPassword(new BCryptPasswordEncoder().encode(sysUserModifyReq.getPassword()));
+        }
+        int update = 0;
+        if (isNew) {
+            update = sysUserMapper.insert(sysUserEntity);
+        } else {
+            update = sysUserMapper.updateById(sysUserEntity);
+        }
+        DatabaseUtils.checkModifyOne(update);
     }
 }

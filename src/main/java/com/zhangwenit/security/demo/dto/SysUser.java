@@ -1,6 +1,7 @@
 package com.zhangwenit.security.demo.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.zhangwenit.security.demo.entity.SysUserEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -43,4 +44,19 @@ public class SysUser {
 
     private List<SysRole> roles;
 
+    public SysUser() {
+    }
+
+    public SysUser(SysUserEntity sysUserEntity) {
+        this.id = sysUserEntity.getId();
+        this.merchantId = sysUserEntity.getMerchantId();
+        this.enabled = sysUserEntity.getEnabled();
+        this.type = sysUserEntity.getType();
+        this.phone = sysUserEntity.getPhone();
+        this.name = sysUserEntity.getName();
+        this.headUrl = sysUserEntity.getHeadUrl();
+        this.remark = sysUserEntity.getRemark();
+        this.username = sysUserEntity.getUsername();
+        this.password = sysUserEntity.getPassword();
+    }
 }

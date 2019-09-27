@@ -1,9 +1,13 @@
 package com.zhangwenit.security.demo.controller;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.titan.common.result.ResultVO;
 import com.zhangwenit.security.demo.dto.Menu;
 import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.db.PageInfo;
+import com.zhangwenit.security.demo.dto.req.SysUserModifyReq;
+import com.zhangwenit.security.demo.dto.req.SysUserSearch;
 import com.zhangwenit.security.demo.dto.req.UpdateUserRole;
 import com.zhangwenit.security.demo.service.MyInvocationSecurityMetadataSourceService;
 import com.zhangwenit.security.demo.service.SysPermissionService;
@@ -54,8 +58,16 @@ public class SecurityController {
     @GetMapping("/userSearchByKeywords")
     public ResultVO<List<SysUser>> userSearchByKeywords(@RequestParam String keywords) {
         List<SysUser> userList = sysPermissionService.userSearchByKeywords(keywords);
-        log.debug("userSearch response:[{}]", userList);
+        log.debug("userSearchByKeywords response:[{}]", userList);
         return ResultVO.buildSuccess(userList);
+    }
+
+    @ApiOperation("条件查询账号列表")
+    @PostMapping("/userSearch")
+    public ResultVO<PageInfo<SysUser>> userSearch(@RequestBody SysUserSearch criteria) {
+        IPage<SysUser> userList = sysPermissionService.userSearch(criteria);
+        log.debug("userSearch response:[{}]", userList);
+        return ResultVO.buildSuccess((PageInfo<SysUser>) userList);
     }
 
     @ApiOperation("更新用户信息")
@@ -82,6 +94,14 @@ public class SecurityController {
     public ResultVO updateUserRoles(@RequestBody UpdateUserRole updateUserRole) {
         updateUserRole.checkParams();
         sysPermissionService.updateUserRoles(updateUserRole);
+        return ResultVO.buildSuccess();
+    }
+
+    @ApiOperation("新建或修改账号")
+    @PostMapping(value = "/user")
+    public ResultVO user(@RequestBody SysUserModifyReq sysUserModifyReq) {
+        sysUserModifyReq.checkParams();
+        sysPermissionService.user(sysUserModifyReq);
         return ResultVO.buildSuccess();
     }
 }
