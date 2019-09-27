@@ -1,12 +1,15 @@
 package com.zhangwenit.security.demo.dto;
 
-import com.zhangwenit.security.demo.entity.SysPermissionEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.CollectionUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 菜单树列表
@@ -69,5 +72,53 @@ public class Menu implements Serializable {
         this.requireAuth = p.getRequireAuth();
         this.isMenu = p.getIsMenu();
         this.currLevel = p.getCurrLevel();
+    }
+
+    /**
+     * 构建菜单属性结构list
+     *
+     * @param list
+     * @return
+     */
+    public static List<Menu> tree(List<Permission> list) {
+        List<Menu> resultList = new ArrayList<>();
+        //构建菜单属性结构
+        if (!CollectionUtils.isEmpty(list)) {
+            Map<String, Menu> parentMap = new HashMap<>(16);
+            //先添加一级目录
+            for (Permission p : list) {
+                if (1 == p.getCurrLevel()) {
+                    Menu dto = new Menu(p);
+                    parentMap.put(p.getId(), dto);
+                    resultList.add(dto);
+                }
+            }
+            //再添加子类
+            int index = 2;
+            while (true) {
+                //如果某个层级个数为0，那么循环结束
+                int count = 0;
+                for (Permission p : list) {
+                    if (index == p.getCurrLevel()) {
+                        count++;
+                        Menu listDto = new Menu(p);
+                        parentMap.put(p.getId(), listDto);
+                        if (StringUtils.isNotEmpty(p.getPid())) {
+                            Menu dto = parentMap.get(p.getPid());
+                            if (dto != null) {
+                                dto.getChildren().add(listDto);
+                            }
+                        } else {
+                            throw new RuntimeException("数据异常");
+                        }
+                    }
+                }
+                if (count == 0) {
+                    break;
+                }
+                index++;
+            }
+        }
+        return resultList;
     }
 }

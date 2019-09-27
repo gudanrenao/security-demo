@@ -1,7 +1,7 @@
 package com.zhangwenit.security.demo.controller;
 
 import com.titan.common.result.ResultVO;
-import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.LoginReq;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @Description
@@ -35,7 +36,8 @@ public class LoginController {
 //    }
 
     @GetMapping("/needLogin")
-    public ResultVO needLogin() {
+    public ResultVO needLogin(HttpServletResponse response) {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         return ResultVO.buildError(401, "您尚未登录，请先登录!");
     }
 
@@ -50,7 +52,7 @@ public class LoginController {
      */
     @PostMapping("/myLogin")
     @ResponseBody
-    public ResultVO myLogin(HttpServletRequest request, @RequestBody SysUser sysUser) throws ServletException {
+    public ResultVO myLogin(HttpServletRequest request, @RequestBody LoginReq sysUser) throws ServletException {
         if (StringUtils.isEmpty(sysUser.getUsername()) || StringUtils.isEmpty(sysUser.getPassword())) {
             return ResultVO.buildError(401, "用户名或密码为空");
         }
@@ -60,7 +62,7 @@ public class LoginController {
 
     @GetMapping("/myLogin")
     @ResponseBody
-    public ResultVO login(HttpServletRequest request,  SysUser sysUser) throws ServletException {
+    public ResultVO login(HttpServletRequest request, LoginReq sysUser) throws ServletException {
         if (StringUtils.isEmpty(sysUser.getUsername()) || StringUtils.isEmpty(sysUser.getPassword())) {
             return ResultVO.buildError(401, "用户名或密码为空");
         }

@@ -1,8 +1,11 @@
 package com.zhangwenit.security.demo.service;
 
+import com.zhangwenit.security.demo.constant.RoleConstant;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,7 +29,10 @@ public class MyAccessDecisionManager implements AccessDecisionManager {
      */
     @Override
     public void decide(Authentication authentication, Object object, Collection<ConfigAttribute> configAttributes) throws AccessDeniedException, InsufficientAuthenticationException {
-
+        //不允许匿名用户访问
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            throw new BadCredentialsException("未登录");
+        }
         if (null == configAttributes || configAttributes.size() <= 0) {
             return;
         }
@@ -35,6 +41,10 @@ public class MyAccessDecisionManager implements AccessDecisionManager {
         for (ConfigAttribute configAttribute : configAttributes) {
             c = configAttribute;
             needRole = c.getAttribute();
+            //如果是任意角色可访问，直接返回
+            if (RoleConstant.ROLE_ANY.equalsIgnoreCase(needRole)) {
+                return;
+            }
             for (GrantedAuthority ga : authentication.getAuthorities()) {
                 //authentication 为在CustomUserService循环添加到 GrantedAuthority 对象中的权限信息集合
                 if (needRole.trim().equals(ga.getAuthority())) {

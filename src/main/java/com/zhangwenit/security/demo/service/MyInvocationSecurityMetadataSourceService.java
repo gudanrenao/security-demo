@@ -1,5 +1,6 @@
 package com.zhangwenit.security.demo.service;
 
+import com.zhangwenit.security.demo.constant.RoleConstant;
 import com.zhangwenit.security.demo.dto.Permission;
 import com.zhangwenit.security.demo.dto.RolePermission;
 import com.zhangwenit.security.demo.mapper.SysPermissionMapper;
@@ -80,10 +81,11 @@ public class MyInvocationSecurityMetadataSourceService implements FilterInvocati
     public Collection<ConfigAttribute> getAttributes(Object object) throws IllegalArgumentException {
         //object 中包含用户请求的request 信息
         HttpServletRequest request = ((FilterInvocation) object).getHttpRequest();
-        //部分请求所有用户都可以访问
+
         String uri = request.getRequestURI();
         if (withoutRoleUriSet.contains(uri)) {
-            return null;
+            //部分请求所有用户都可以访问,返回一个固定角色
+            return SecurityConfig.createList(RoleConstant.ROLE_ANY);
         }
         AntPathRequestMatcher matcher;
         String resUrl;

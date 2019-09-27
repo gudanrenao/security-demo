@@ -1,5 +1,8 @@
 package com.zhangwenit.security.demo.dto;
 
+import io.swagger.annotations.ApiModelProperty;
+import lombok.Data;
+import lombok.experimental.Accessors;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -13,11 +16,36 @@ import java.util.List;
  * @Date 2019/9/25 10:27 AM
  * @Version 1.0
  **/
+@Data
+@Accessors(chain = true)
 public class CustomUserDetails extends User {
 
-    private final AuthenticationDetail authenticationDetail;
+    @ApiModelProperty(value = "账号类型 1=超级管理员 2=普通账号")
+    private Integer type;
 
-    private final List<SysRole> roles;
+    @ApiModelProperty("账号Id")
+    private String userId;
+
+    @ApiModelProperty(value = "商户Id")
+    private String merchantId;
+
+    @ApiModelProperty(value = "手机号")
+    private String phone;
+
+    @ApiModelProperty(value = "用户真实姓名")
+    private String name;
+
+    @ApiModelProperty(value = "头像地址")
+    private String headUrl;
+
+    @ApiModelProperty(value = "备注")
+    private String remark;
+
+    @ApiModelProperty("角色列表")
+    private List<SysRole> roles;
+
+    @ApiModelProperty("资源列表")
+    private List<Resource> resourceList;
 
     /**
      * 验证前构建方法
@@ -27,10 +55,8 @@ public class CustomUserDetails extends User {
      * @param password
      * @param authorities
      */
-    public CustomUserDetails(String username, String password, boolean enabled, Collection<? extends GrantedAuthority> authorities, AuthenticationDetail authenticationDetail, List<SysRole> roles) {
+    public CustomUserDetails(String username, String password, boolean enabled, Collection<? extends GrantedAuthority> authorities) {
         super(username, password, enabled, true, true, true, authorities);
-        this.authenticationDetail = authenticationDetail;
-        this.roles = roles;
     }
 
     /**
@@ -49,21 +75,29 @@ public class CustomUserDetails extends User {
      * @param accountNonLocked      set to <code>true</code> if the account is not locked
      * @param authorities           the authorities that should be granted to the caller if they
      *                              presented the correct username and password and the user is enabled. Not null.
-     * @param authenticationDetail
      * @throws IllegalArgumentException if a <code>null</code> value was passed either as
      *                                  a parameter or as an element in the <code>GrantedAuthority</code> collection
      */
-    public CustomUserDetails(String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities, AuthenticationDetail authenticationDetail, List<SysRole> roles) {
+    public CustomUserDetails(String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, Collection<? extends GrantedAuthority> authorities) {
         super(username, password, enabled, accountNonExpired, credentialsNonExpired, accountNonLocked, authorities);
-        this.authenticationDetail = authenticationDetail;
-        this.roles = roles;
     }
 
-    public AuthenticationDetail getAuthenticationDetail() {
-        return authenticationDetail;
+    /**
+     * 填充账户基本信息
+     *
+     * @param user
+     * @param resourceList
+     */
+    public void fillUserInfo(SysUser user, List<Resource> resourceList) {
+        this.
+                setResourceList(resourceList)
+                .setUserId(user.getId())
+                .setMerchantId(user.getMerchantId())
+                .setType(user.getType() != null ? user.getType() : 2)
+                .setHeadUrl(user.getHeadUrl())
+                .setPhone(user.getPhone())
+                .setRemark(user.getRemark())
+                .setName(user.getName());
     }
 
-    public List<SysRole> getRoles() {
-        return roles;
-    }
 }

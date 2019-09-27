@@ -1,7 +1,7 @@
 package com.zhangwenit.security.demo.service;
 
-import com.zhangwenit.security.demo.dto.AuthenticationDetail;
 import com.zhangwenit.security.demo.dto.CustomUserDetails;
+import com.zhangwenit.security.demo.dto.Resource;
 import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
 import com.zhangwenit.security.demo.mapper.SysPermissionMapper;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * /自定义UserDetailsService 接口
@@ -49,11 +50,12 @@ public class CustomUserService implements UserDetailsService {
                     grantedAuthorities.add(grantedAuthority);
                 }
             }
-            //将资源信息放入UserDetails,后面请求认证后以便过滤数据
+            CustomUserDetails userDetails = new CustomUserDetails(user.getUsername(), user.getPassword(), user.getEnabled() == 1, grantedAuthorities);
+            //查询出资源信息,后面请求认证后以便过滤数据
             List<String> resourceList = sysUserResourceMapper.selectResourceByUserId(user.getId());
-            //将账户Id和租户Id放入UserDetails
-            AuthenticationDetail authenticationDetail = new AuthenticationDetail().setResourceList(resourceList).setUserId(user.getId()).setMerchantId(user.getMerchantId()).setType(user.getType() != null ? user.getType() : 2);
-            return new CustomUserDetails(user.getUsername(), user.getPassword(), user.getEnabled() == 1, grantedAuthorities, authenticationDetail, roleList);
+            //将账号基本信息和资源信息放入UserDetails
+            userDetails.fillUserInfo(user,resourceList.stream().map(Resource::new).collect(Collectors.toList()));
+            return userDetails;
         } else {
             throw new UsernameNotFoundException("admin: " + username + " do not exist!");
         }

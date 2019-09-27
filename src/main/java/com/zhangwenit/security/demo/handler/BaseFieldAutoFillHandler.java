@@ -1,6 +1,8 @@
 package com.zhangwenit.security.demo.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.zhangwenit.security.demo.dto.CustomUserDetails;
+import com.zhangwenit.security.demo.utils.SecurityUtils;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
@@ -25,9 +27,14 @@ public class BaseFieldAutoFillHandler implements MetaObjectHandler {
         this.setInsertFieldValByName("createTime", new Date(), metaObject);
         this.setInsertFieldValByName("modifyTime", new Date(), metaObject);
         this.setInsertFieldValByName("isDelete", 0, metaObject);
-        this.setInsertFieldValByName("creatorId", -1, metaObject);
-        this.setInsertFieldValByName("modifyUserId", -1, metaObject);
-
+        CustomUserDetails userDetails = SecurityUtils.getUserDetails();
+        if (userDetails != null) {
+            this.setInsertFieldValByName("creatorId", userDetails.getUserId(), metaObject);
+            this.setInsertFieldValByName("modifyUserId", userDetails.getUserId(), metaObject);
+        } else {
+            this.setInsertFieldValByName("creatorId", "-1", metaObject);
+            this.setInsertFieldValByName("modifyUserId", "-1", metaObject);
+        }
 
     }
 
@@ -39,6 +46,11 @@ public class BaseFieldAutoFillHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
         this.setUpdateFieldValByName("modifyTime", new Date(), metaObject);
-        this.setInsertFieldValByName("modifyUserId", "-1", metaObject);
+        CustomUserDetails userDetails = SecurityUtils.getUserDetails();
+        if (userDetails != null) {
+            this.setInsertFieldValByName("modifyUserId", userDetails.getUserId(), metaObject);
+        } else {
+            this.setInsertFieldValByName("modifyUserId", "-1", metaObject);
+        }
     }
 }

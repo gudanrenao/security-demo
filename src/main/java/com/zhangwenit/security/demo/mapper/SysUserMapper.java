@@ -30,17 +30,10 @@ public interface SysUserMapper extends BaseMapper<SysUserEntity> {
      *
      * @param keywords
      * @param merchantId
+     * @param userId 账号Id(排除当前账号)
      * @return
      */
-    List<SysUser> userSearchByKeywords(@Param("keywords") String keywords, @Param("merchantId") String merchantId);
-
-    /**
-     * 更新用户信息
-     *
-     * @param sysUser
-     * @return
-     */
-    int updateUser(SysUser sysUser);
+    List<SysUser> userSearchByKeywords(@Param("keywords") String keywords, @Param("merchantId") String merchantId, @Param("userId") String userId);
 
     /**
      * 根据Id查询账号信息

@@ -1,6 +1,7 @@
 package com.zhangwenit.security.demo.utils;
 
 import com.zhangwenit.security.demo.dto.CustomUserDetails;
+import com.zhangwenit.security.demo.dto.Resource;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -15,8 +16,8 @@ import java.util.List;
  **/
 public class SecurityUtils {
 
-    public static List<String> getResourceList() {
-        return getUserDetails().getAuthenticationDetail().getResourceList();
+    public static List<Resource> getResourceList() {
+        return getUserDetails().getResourceList();
     }
 
     public static String getUsername() {
@@ -24,11 +25,11 @@ public class SecurityUtils {
     }
 
     public static String getUserId() {
-        return getUserDetails().getAuthenticationDetail().getUserId();
+        return getUserDetails().getUserId();
     }
 
     public static String getMerchantId() {
-        return getUserDetails().getAuthenticationDetail().getMerchantId();
+        return getUserDetails().getMerchantId();
     }
 
     public static Collection<GrantedAuthority> getAuthorities() {

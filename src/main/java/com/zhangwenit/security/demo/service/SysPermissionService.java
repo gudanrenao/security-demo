@@ -1,15 +1,23 @@
 package com.zhangwenit.security.demo.service;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.titan.common.util.FieldChecker;
 import com.zhangwenit.security.demo.dto.Menu;
 import com.zhangwenit.security.demo.dto.Permission;
+import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.req.UpdateUserRole;
 import com.zhangwenit.security.demo.entity.SysPermissionEntity;
+import com.zhangwenit.security.demo.entity.SysUserEntity;
+import com.zhangwenit.security.demo.entity.SysUserRoleEntity;
 import com.zhangwenit.security.demo.mapper.SysPermissionMapper;
+import com.zhangwenit.security.demo.mapper.SysRoleMapper;
 import com.zhangwenit.security.demo.mapper.SysUserMapper;
+import com.zhangwenit.security.demo.mapper.SysUserRoleMapper;
+import com.zhangwenit.security.demo.utils.DatabaseUtils;
 import com.zhangwenit.security.demo.utils.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -29,11 +37,16 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
 
     private final SysPermissionMapper sysPermissionMapper;
     private final SysUserMapper sysUserMapper;
+    private final SysRoleMapper sysRoleMapper;
+    private final SysUserRoleMapper sysUserRoleMapper;
+
     private static List<Permission> permissionList;
 
-    public SysPermissionService(SysPermissionMapper sysPermissionMapper, SysUserMapper sysUserMapper) {
+    public SysPermissionService(SysPermissionMapper sysPermissionMapper, SysUserMapper sysUserMapper, SysRoleMapper sysRoleMapper, SysUserRoleMapper sysUserRoleMapper) {
         this.sysPermissionMapper = sysPermissionMapper;
         this.sysUserMapper = sysUserMapper;
+        this.sysRoleMapper = sysRoleMapper;
+        this.sysUserRoleMapper = sysUserRoleMapper;
         loadAllMenuPermission();
     }
 
@@ -62,7 +75,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     public List<Menu> menuTree() {
         //去除非菜单权限&排序
         List<Permission> resultList = permissionList.stream().filter(e -> e.getIsMenu() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
-        return tree(resultList);
+        return Menu.tree(resultList);
     }
 
     /**
@@ -73,8 +86,8 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      */
     public List<Menu> userMenuTree() {
         List<Permission> permissions = baseMapper.findAllPermissionByUserId(SecurityUtils.getUserId());
-        Map<String, Permission> beforeMap = toMap(permissions);
-        Map<String, Permission> permissionMap = toMap(permissionList);
+        Map<String, Permission> beforeMap = permissions.stream().collect(Collectors.toMap(Permission::getId, e -> e));
+        Map<String, Permission> permissionMap = permissionList.stream().collect(Collectors.toMap(Permission::getId, e -> e));
         final String rootId = "0";
         Map<String, Permission> needAddMap = new HashMap<>(4);
         beforeMap.forEach((k, v) -> {
@@ -89,53 +102,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         beforeMap.putAll(needAddMap);
         //去除非菜单权限&排序
         List<Permission> resultList = new ArrayList<>(beforeMap.values()).stream().filter(e -> e.getIsMenu() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
-        return tree(resultList);
-    }
-
-    private Map<String, Permission> toMap(List<Permission> permissionList) {
-        return permissionList.stream().collect(Collectors.toMap(Permission::getId, e -> e));
-    }
-
-    private List<Menu> tree(List<Permission> list) {
-        List<Menu> resultList = new ArrayList<>();
-        //构建菜单属性结构
-        if (!CollectionUtils.isEmpty(list)) {
-            Map<String, Menu> parentMap = new HashMap<>(16);
-            //先添加一级目录
-            for (Permission p : list) {
-                if (1 == p.getCurrLevel()) {
-                    Menu dto = new Menu(p);
-                    parentMap.put(p.getId(), dto);
-                    resultList.add(dto);
-                }
-            }
-            //再添加子类
-            int index = 2;
-            while (true) {
-                //如果某个层级个数为0，那么循环结束
-                int count = 0;
-                for (Permission p : list) {
-                    if (index == p.getCurrLevel()) {
-                        count++;
-                        Menu listDto = new Menu(p);
-                        parentMap.put(p.getId(), listDto);
-                        if (StringUtils.isNotEmpty(p.getPid())) {
-                            Menu dto = parentMap.get(p.getPid());
-                            if (dto != null) {
-                                dto.getChildren().add(listDto);
-                            }
-                        } else {
-                            throw new RuntimeException("数据异常");
-                        }
-                    }
-                }
-                if (count == 0) {
-                    break;
-                }
-                index++;
-            }
-        }
-        return resultList;
+        return Menu.tree(resultList);
     }
 
     /**
@@ -145,7 +112,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @return
      */
     public List<SysUser> userSearchByKeywords(String keywords) {
-        return sysUserMapper.userSearchByKeywords(keywords, SecurityUtils.getMerchantId());
+        return sysUserMapper.userSearchByKeywords(keywords, SecurityUtils.getMerchantId(),SecurityUtils.getUserId());
     }
 
     /**
@@ -155,8 +122,17 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @return
      */
     @Transactional(rollbackFor = RuntimeException.class)
-    public int updateUser(SysUser sysUser) {
-        return sysUserMapper.updateUser(sysUser);
+    public void updateUser(SysUser sysUser) {
+        FieldChecker.assertNotEmpty(sysUser.getId(), "账号Id不能为空");
+        SysUserEntity sysUserEntity = sysUserMapper.selectById(sysUser.getId());
+        if (sysUser.getEnabled() != null) {
+            if (sysUser.getEnabled() != 1 && sysUser.getEnabled() != 0) {
+                throw new IllegalArgumentException("状态值设置有误");
+            }
+            sysUserEntity.setEnabled(sysUser.getEnabled());
+        }
+        int update = sysUserMapper.updateById(sysUserEntity);
+        DatabaseUtils.checkModifyOne(update);
     }
 
     /**
@@ -167,5 +143,39 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      */
     public SysUser getUserById(String userId) {
         return sysUserMapper.getUserById(userId);
+    }
+
+    /**
+     * 获取所有角色列表
+     *
+     * @return
+     */
+    public List<SysRole> roles() {
+        return sysRoleMapper.roles();
+    }
+
+    /**
+     * 更新账号角色
+     *
+     * @param updateUserRole
+     */
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void updateUserRoles(UpdateUserRole updateUserRole) {
+        //首先删除用户所有角色
+        int delete = sysUserRoleMapper.delete(Wrappers.<SysUserRoleEntity>lambdaQuery().eq(SysUserRoleEntity::getSysUserId, updateUserRole.getUserId()));
+        log.debug("updateUserRoles 已删除用户角色数量:[{}]", delete);
+        int add = 0;
+        if (!CollectionUtils.isEmpty(updateUserRole.getRids())) {
+            //添加用户新的角色
+            SysUserRoleEntity userRoleEntity;
+            for (String rid : updateUserRole.getRids()) {
+                userRoleEntity = new SysUserRoleEntity();
+                userRoleEntity.setId(UUID.randomUUID().toString()).setSysUserId(updateUserRole.getUserId()).setSysRoleId(rid);
+                int insert = sysUserRoleMapper.insert(userRoleEntity);
+                DatabaseUtils.checkModifyOne(insert);
+                add += 1;
+            }
+        }
+        log.debug("updateUserRoles 已添加用户角色数量:[{}]", add);
     }
 }

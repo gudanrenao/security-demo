@@ -1,7 +1,10 @@
 package com.zhangwenit.security.demo.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.entity.SysRoleEntity;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +15,11 @@ import com.zhangwenit.security.demo.entity.SysRoleEntity;
  * @since 2019-09-22
  */
 public interface SysRoleMapper extends BaseMapper<SysRoleEntity> {
+
+    /**
+     * 获取所有角色列表
+     * @return
+     */
+    List<SysRole> roles();
 
 }

@@ -2,7 +2,9 @@ package com.zhangwenit.security.demo.controller;
 
 import com.titan.common.result.ResultVO;
 import com.zhangwenit.security.demo.dto.Menu;
+import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.req.UpdateUserRole;
 import com.zhangwenit.security.demo.service.MyInvocationSecurityMetadataSourceService;
 import com.zhangwenit.security.demo.service.SysPermissionService;
 import io.swagger.annotations.Api;
@@ -59,15 +61,27 @@ public class SecurityController {
     @ApiOperation("更新用户信息")
     @PutMapping(value = "/updateUser")
     public ResultVO updateUser(@RequestBody SysUser sysUser) {
-        if (sysPermissionService.updateUser(sysUser) == 1) {
-            return ResultVO.buildSuccess("更新成功!");
-        }
-        return ResultVO.buildError(-1, "更新失败!");
+        sysPermissionService.updateUser(sysUser);
+        return ResultVO.buildSuccess();
     }
 
     @ApiOperation("根据Id查询账号信息")
     @GetMapping("/getUserById")
     public ResultVO<SysUser> getUserById(@RequestParam String id) {
         return ResultVO.buildSuccess(sysPermissionService.getUserById(id));
+    }
+
+    @ApiOperation("获取所有角色列表")
+    @GetMapping(value = "/roles")
+    public ResultVO<List<SysRole>> allRoles() {
+        return ResultVO.buildSuccess(sysPermissionService.roles());
+    }
+
+    @ApiOperation("更新账号角色")
+    @PutMapping(value = "/updateUserRoles")
+    public ResultVO updateUserRoles(@RequestBody UpdateUserRole updateUserRole) {
+        updateUserRole.checkParams();
+        sysPermissionService.updateUserRoles(updateUserRole);
+        return ResultVO.buildSuccess();
     }
 }
