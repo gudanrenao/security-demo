@@ -3,6 +3,7 @@ package com.zhangwenit.security.demo.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.titan.common.result.ResultVO;
 import com.zhangwenit.security.demo.dto.Menu;
+import com.zhangwenit.security.demo.dto.MenuAndComponent;
 import com.zhangwenit.security.demo.dto.SysRole;
 import com.zhangwenit.security.demo.dto.SysUser;
 import com.zhangwenit.security.demo.dto.db.PageInfo;
@@ -50,7 +51,7 @@ public class SecurityController {
      */
     @ApiOperation("获取登录账号拥有的菜单列表")
     @GetMapping("/userMenuTree")
-    public ResultVO<List<Menu>> userMenuTree() {
+    public ResultVO<MenuAndComponent> userMenuTree() {
         return ResultVO.buildSuccess(sysPermissionService.userMenuTree());
     }
 

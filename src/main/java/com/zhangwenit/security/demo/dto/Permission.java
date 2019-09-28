@@ -51,6 +51,9 @@ public class Permission implements Comparable, Serializable {
     @ApiModelProperty(value = "是否是菜单项 1=是 0=不是")
     private Integer isMenu;
 
+    @ApiModelProperty(value = "是否跳转页面 1=是 0=否")
+    private Integer isPage;
+
     @ApiModelProperty(value = "当前层级 最小为1")
     private Integer currLevel;
 

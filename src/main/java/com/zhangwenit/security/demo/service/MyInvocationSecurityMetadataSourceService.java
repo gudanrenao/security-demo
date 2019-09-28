@@ -1,6 +1,6 @@
 package com.zhangwenit.security.demo.service;
 
-import com.zhangwenit.security.demo.constant.RoleConstant;
+import com.zhangwenit.security.demo.constant.SecurityConstant;
 import com.zhangwenit.security.demo.dto.Permission;
 import com.zhangwenit.security.demo.dto.RolePermission;
 import com.zhangwenit.security.demo.mapper.SysPermissionMapper;
@@ -85,7 +85,7 @@ public class MyInvocationSecurityMetadataSourceService implements FilterInvocati
         String uri = request.getRequestURI();
         if (withoutRoleUriSet.contains(uri)) {
             //部分请求所有用户都可以访问,返回一个固定角色
-            return SecurityConfig.createList(RoleConstant.ROLE_ANY);
+            return SecurityConfig.createList(SecurityConstant.ROLE_ANY);
         }
         AntPathRequestMatcher matcher;
         String resUrl;

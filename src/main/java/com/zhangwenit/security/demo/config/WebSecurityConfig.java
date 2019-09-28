@@ -25,7 +25,7 @@ import org.springframework.security.web.access.intercept.FilterSecurityIntercept
  * @author by ZWen on 19/9/18.
  */
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity(debug = false)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired

@@ -5,10 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.titan.common.util.FieldChecker;
-import com.zhangwenit.security.demo.dto.Menu;
-import com.zhangwenit.security.demo.dto.Permission;
-import com.zhangwenit.security.demo.dto.SysRole;
-import com.zhangwenit.security.demo.dto.SysUser;
+import com.zhangwenit.security.demo.dto.*;
 import com.zhangwenit.security.demo.dto.db.PageInfo;
 import com.zhangwenit.security.demo.dto.req.SysUserModifyReq;
 import com.zhangwenit.security.demo.dto.req.SysUserSearch;
@@ -63,7 +60,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     }
 
     /**
-     * 获取所有的菜单列表
+     * 获取所有的权限树列表
      * <p>
      * 另一种sql方案：
      * <resultMap id="BaseResultMap" type="org.sang.bean.Department">
@@ -81,18 +78,18 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @return
      */
     public List<Menu> menuTree() {
-        //去除非菜单权限&排序
-        List<Permission> resultList = permissionList.stream().filter(e -> e.getIsMenu() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
+        //排序
+        List<Permission> resultList = permissionList.stream().sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
         return Menu.tree(resultList);
     }
 
     /**
-     * 获取用户的所有的菜单列表
+     * 获取用户的所有的菜单&Component列表
      * todo:缓存
      *
      * @return
      */
-    public List<Menu> userMenuTree() {
+    public MenuAndComponent userMenuTree() {
         List<Permission> permissions = baseMapper.findAllPermissionByUserId(SecurityUtils.getUserId());
         Map<String, Permission> beforeMap = permissions.stream().collect(Collectors.toMap(Permission::getId, e -> e));
         Map<String, Permission> permissionMap = permissionList.stream().collect(Collectors.toMap(Permission::getId, e -> e));
@@ -108,9 +105,13 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         });
         //合并
         beforeMap.putAll(needAddMap);
-        //去除非菜单权限&排序
-        List<Permission> resultList = new ArrayList<>(beforeMap.values()).stream().filter(e -> e.getIsMenu() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
-        return Menu.tree(resultList);
+        //前端目前只是2级菜单，只需要去除非Component&排序
+        List<Permission> resultList = new ArrayList<>(beforeMap.values()).stream().filter(e -> e.getIsPage() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
+        MenuAndComponent result = new MenuAndComponent();
+        result.setMenus(Menu.tree(resultList));
+        //非菜单的Component需要合并到二级菜单上
+        result.setComponents(Menu.component(resultList));
+        return result;
     }
 
     /**

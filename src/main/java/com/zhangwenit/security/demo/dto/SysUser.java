@@ -39,7 +39,6 @@ public class SysUser {
 
     private String username;
 
-    @JsonIgnore
     private String password;
 
     private List<SysRole> roles;

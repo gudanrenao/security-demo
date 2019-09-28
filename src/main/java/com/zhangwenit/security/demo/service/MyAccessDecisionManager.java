@@ -1,6 +1,6 @@
 package com.zhangwenit.security.demo.service;
 
-import com.zhangwenit.security.demo.constant.RoleConstant;
+import com.zhangwenit.security.demo.constant.SecurityConstant;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
@@ -42,7 +42,7 @@ public class MyAccessDecisionManager implements AccessDecisionManager {
             c = configAttribute;
             needRole = c.getAttribute();
             //如果是任意角色可访问，直接返回
-            if (RoleConstant.ROLE_ANY.equalsIgnoreCase(needRole)) {
+            if (SecurityConstant.ROLE_ANY.equalsIgnoreCase(needRole)) {
                 return;
             }
             for (GrantedAuthority ga : authentication.getAuthorities()) {

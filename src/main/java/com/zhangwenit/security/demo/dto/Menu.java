@@ -53,13 +53,16 @@ public class Menu implements Serializable {
     @ApiModelProperty(value = "是否是菜单项 1=是 0=不是")
     private Integer isMenu;
 
+    @ApiModelProperty(value = "是否跳转页面 1=是 0=否")
+    private Integer isPage;
+
     @ApiModelProperty(value = "当前层级 最小为1")
     private Integer currLevel;
 
-    @ApiModelProperty("权限菜单的子权限列表")
-    private List<Menu> children = new ArrayList<>();
+    @ApiModelProperty("子菜单列表")
+    private List<Menu> children;
 
-    public Menu(Permission p) {
+    public Menu(Permission p, boolean hasChildren) {
         this.id = p.getId();
         this.name = p.getName();
         this.description = p.getDescription();
@@ -71,7 +74,11 @@ public class Menu implements Serializable {
         this.keepAlive = p.getKeepAlive();
         this.requireAuth = p.getRequireAuth();
         this.isMenu = p.getIsMenu();
+        this.isPage = p.getIsPage();
         this.currLevel = p.getCurrLevel();
+        if (hasChildren) {
+            this.children = new ArrayList<>();
+        }
     }
 
     /**
@@ -88,20 +95,21 @@ public class Menu implements Serializable {
             //先添加一级目录
             for (Permission p : list) {
                 if (1 == p.getCurrLevel()) {
-                    Menu dto = new Menu(p);
+                    Menu dto = new Menu(p, true);
                     parentMap.put(p.getId(), dto);
                     resultList.add(dto);
                 }
             }
             //再添加子类
             int index = 2;
+            //添加子菜单
             while (true) {
                 //如果某个层级个数为0，那么循环结束
                 int count = 0;
                 for (Permission p : list) {
                     if (index == p.getCurrLevel()) {
                         count++;
-                        Menu listDto = new Menu(p);
+                        Menu listDto = new Menu(p, true);
                         parentMap.put(p.getId(), listDto);
                         if (StringUtils.isNotEmpty(p.getPid())) {
                             Menu dto = parentMap.get(p.getPid());
@@ -121,4 +129,22 @@ public class Menu implements Serializable {
         }
         return resultList;
     }
+
+    /**
+     * 构建Component结构
+     *
+     * @param list
+     * @return
+     */
+    public static List<Menu> component(List<Permission> list) {
+        List<Menu> result = new ArrayList<>();
+        for (Permission permission : list) {
+            if (permission.getIsPage() == 1 && permission.getIsMenu() == 0) {
+                result.add(new Menu(permission, false));
+            }
+        }
+        return result;
+    }
+
+
 }

@@ -51,7 +51,7 @@
 		from sys_user_role sru
         LEFT JOIN sys_role_permission spr on spr.sys_role_id=sru.sys_role_id
         LEFT JOIN sys_permission p on p.id =spr.sys_permission_id
-        where sru.sys_user_id = #{userId} and p.is_delete = 0 order by p.sid asc
+        where sru.sys_user_id = #{userId} and spr.is_delete = 0 and sru.is_delete = 0 and p.is_delete = 0 order by p.sid asc
     </select>
 
     <select id="findAllMenuPermission" resultType="com.zhangwenit.security.demo.dto.Permission">
