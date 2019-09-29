@@ -40,6 +40,7 @@ public class CustomUserService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) {
         SysUser user = sysUserMapper.findByUserName(username);
         if (user != null) {
+            //todo:超级管理员默认拥有所有角色
             List<SysRole> roleList = sysPermissionMapper.findAllRoleByUserId(user.getId());
             List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
             for (SysRole role : roleList) {

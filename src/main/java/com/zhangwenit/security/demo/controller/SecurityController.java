@@ -78,7 +78,7 @@ public class SecurityController {
         return ResultVO.buildSuccess();
     }
 
-    @ApiOperation("根据Id查询账号信息")
+    @ApiOperation("根据Id查询账号基本信息及角色信息")
     @GetMapping("/getUserById")
     public ResultVO<SysUser> getUserById(@RequestParam String id) {
         return ResultVO.buildSuccess(sysPermissionService.getUserById(id));

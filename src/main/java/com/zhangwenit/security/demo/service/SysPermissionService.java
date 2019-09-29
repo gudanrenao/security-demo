@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.titan.common.util.FieldChecker;
+import com.zhangwenit.security.demo.constant.SecurityConstant;
 import com.zhangwenit.security.demo.dto.*;
 import com.zhangwenit.security.demo.dto.db.PageInfo;
 import com.zhangwenit.security.demo.dto.req.SysUserModifyReq;
@@ -121,7 +122,24 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @return
      */
     public List<SysUser> userSearchByKeywords(final String keywords) {
-        return sysUserMapper.userSearchByKeywords(keywords, SecurityUtils.getMerchantId(), SecurityUtils.getUserId());
+        //默认获取10个
+        IPage<SysUser> page = userSearch(new SysUserSearch().setName(keywords));
+        if (!CollectionUtils.isEmpty(page.getRecords())) {
+            //获取每个账号的角色列表
+            List<String> userIdList = page.getRecords().stream().map(SysUser::getId).collect(Collectors.toList());
+            List<SysUser> userRoleList = sysUserMapper.findRolesGroupByUserIdList(userIdList);
+            if (!CollectionUtils.isEmpty(userRoleList)) {
+                for (SysUser record : page.getRecords()) {
+                    for (SysUser sysUser : userRoleList) {
+                        if (record.getId().equals(sysUser.getId())) {
+                            record.setRoles(sysUser.getRoles());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return page.getRecords();
     }
 
     /**
@@ -137,8 +155,10 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
                 .ne(SysUserEntity::getId, SecurityUtils.getUserId())
                 .like(StringUtils.isNotEmpty(criteria.getPhone()), SysUserEntity::getPhone, criteria.getPhone())
                 .eq(criteria.getEnabled() != null, SysUserEntity::getEnabled, criteria.getEnabled())
-                .and(StringUtils.isNotEmpty(criteria.getName()), e -> e.like(SysUserEntity::getName, criteria.getName()).or().like(SysUserEntity::getUsername, criteria.getName()))
                 .eq(SysUserEntity::getType, DictEnum.SysUserType.COMMON);
+        if (!SecurityConstant.ALL_USER.equals(criteria.getName())) {
+            qw.and(StringUtils.isNotEmpty(criteria.getName()), e -> e.like(SysUserEntity::getName, criteria.getName()).or().like(SysUserEntity::getUsername, criteria.getName()));
+        }
         return sysUserMapper.selectPage(page, qw).convert(SysUser::new);
     }
 
@@ -163,13 +183,28 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     }
 
     /**
-     * 根据Id查询账号信息
+     * 根据Id查询账号基本信息及角色信息
      *
      * @param userId
      * @return
      */
     public SysUser getUserById(final String userId) {
-        return sysUserMapper.getUserById(userId);
+        SysUserEntity sysUserEntity = findSysUserById(userId);
+        //获取该用户角色信息
+        List<SysRole> roles = sysRoleMapper.findRolesByUserId(userId);
+        return new SysUser(sysUserEntity).setRoles(roles);
+    }
+
+    /**
+     * 根据Id查询用户基本信息
+     *
+     * @param userId
+     * @return
+     */
+    public SysUserEntity findSysUserById(String userId) {
+        SysUserEntity sysUserEntity = sysUserMapper.selectById(userId);
+        FieldChecker.assertNotNull(sysUserEntity, "未查询到该账号");
+        return sysUserEntity;
     }
 
     /**
@@ -208,6 +243,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
 
     /**
      * 新建或修改账号
+     * todo:至少要有一个角色或者修改sql,现在没有查不出来没有角色的用户
      *
      * @param sysUserModifyReq
      */
@@ -215,14 +251,13 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     public void user(SysUserModifyReq sysUserModifyReq) {
         SysUserEntity sysUserEntity = null;
         boolean isNew = false;
-        if (StringUtils.isEmpty(sysUserModifyReq.getId())) {
+        if (StringUtils.isEmpty(sysUserModifyReq.getId()) || "0".equals(sysUserModifyReq.getId())) {
             isNew = true;
             sysUserEntity = new SysUserEntity().setId(UUID.randomUUID().toString())
                     .setMerchantId(SecurityUtils.getMerchantId())
                     .setEnabled(DictEnum.SysUserEnabled.YES).setType(DictEnum.SysUserType.COMMON);
         } else {
-            sysUserEntity = sysUserMapper.selectById(sysUserModifyReq.getId());
-            FieldChecker.assertNotNull(sysUserEntity, "未查询到该账号");
+            sysUserEntity = findSysUserById(sysUserModifyReq.getId());
         }
         //更新基本信息
         sysUserEntity.setName(sysUserModifyReq.getName()).setUsername(sysUserModifyReq.getUsername()).setPhone(sysUserModifyReq.getPhone()).setHeadUrl(sysUserModifyReq.getHeadUrl()).setRemark(sysUserModifyReq.getRemark());

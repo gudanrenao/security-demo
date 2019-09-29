@@ -26,14 +26,12 @@ public interface SysUserMapper extends BaseMapper<SysUserEntity> {
     SysUser findByUserName(String username);
 
     /**
-     * 根据名称匹配搜索用户列表
+     * 获取账号的角色列表
      *
-     * @param keywords
-     * @param merchantId
-     * @param userId 账号Id(排除当前账号)
+     * @param userList 账号Id列表(已排除当前账号)
      * @return
      */
-    List<SysUser> userSearchByKeywords(@Param("keywords") String keywords, @Param("merchantId") String merchantId, @Param("userId") String userId);
+    List<SysUser> findRolesGroupByUserIdList(@Param("userList") List<String> userList);
 
     /**
      * 根据Id查询账号信息

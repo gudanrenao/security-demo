@@ -11,4 +11,6 @@ public interface SecurityConstant {
     String ROLE_ANY = "ROLE_ANY";
 
     String NOT_COMPONENT = "NOT_COMPONENT";
+
+    String ALL_USER = "all";
 }
