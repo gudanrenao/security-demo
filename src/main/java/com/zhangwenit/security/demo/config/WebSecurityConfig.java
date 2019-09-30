@@ -1,5 +1,6 @@
 package com.zhangwenit.security.demo.config;
 
+import com.zhangwenit.security.demo.filter.MyCsrfFilter;
 import com.zhangwenit.security.demo.handler.CustomRestAuthenticationFailureHandler;
 import com.zhangwenit.security.demo.handler.CustomRestAuthenticationSuccessHandler;
 import com.zhangwenit.security.demo.handler.CustomRestLogoutSuccessHandler;
@@ -20,12 +21,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.access.intercept.FilterInvocationSecurityMetadataSource;
 import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+import org.springframework.security.web.csrf.CsrfFilter;
 
 /**
  * @author by ZWen on 19/9/18.
  */
 @Configuration
-@EnableWebSecurity(debug = false)
+@EnableWebSecurity(debug = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
@@ -95,7 +97,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated() //任何请求,登录后可以访问
                 .and()
                 .formLogin()
-                //自定义登录POST请求地址 todo:postman怎么访问
+                //自定义登录POST请求地址
                 .loginProcessingUrl("/login")
                 .loginPage("/needLogin")
                 .defaultSuccessUrl("/")
@@ -120,6 +122,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //                .sessionManagement().maximumSessions(1)
 
         ;
+
+
+//        http.addFilterBefore(new MyCsrfFilter(), CsrfFilter.class);
+
 //        http.addFilterBefore(filterSecurityInterceptor(), FilterSecurityInterceptor.class);
     }
 
