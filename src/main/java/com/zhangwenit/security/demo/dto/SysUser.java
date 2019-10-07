@@ -1,11 +1,11 @@
 package com.zhangwenit.security.demo.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.zhangwenit.security.demo.entity.SysUserEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -14,8 +14,9 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
-public class SysUser {
+public class SysUser implements Serializable {
 
+    private static final long serialVersionUID = -7105668328245619389L;
     private String id;
 
     @ApiModelProperty(value = "商户Id")
