@@ -81,7 +81,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     public List<Menu> menuTree() {
         //排序
         List<Permission> resultList = permissionList.stream().sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
-        return Menu.tree(resultList);
+        return Menu.tree2(resultList);
     }
 
     /**
@@ -109,7 +109,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         //前端目前只是2级菜单，只需要去除非Component&排序
         List<Permission> resultList = new ArrayList<>(beforeMap.values()).stream().filter(e -> e.getIsPage() == 1).sorted(Comparator.comparingInt(Permission::getSid)).collect(Collectors.toList());
         MenuAndComponent result = new MenuAndComponent();
-        result.setMenus(Menu.tree(resultList));
+        result.setMenus(Menu.tree2(resultList));
         //非菜单的Component需要合并到二级菜单上
         result.setComponents(Menu.component(resultList));
         return result;
@@ -149,7 +149,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
      * @return
      */
     public IPage<SysUser> userSearch(final SysUserSearch criteria) {
-        IPage<SysUserEntity> page = new PageInfo<>(criteria.getCurrentPage(), criteria.getPageSize(), criteria);
+        IPage<SysUserEntity> page = new PageInfo<>(criteria);
         LambdaQueryWrapper<SysUserEntity> qw = Wrappers.<SysUserEntity>lambdaQuery()
                 .eq(SysUserEntity::getMerchantId, SecurityUtils.getMerchantId())
                 .ne(SysUserEntity::getId, SecurityUtils.getUserId())

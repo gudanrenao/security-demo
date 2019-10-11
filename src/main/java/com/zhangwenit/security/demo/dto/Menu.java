@@ -6,10 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.CollectionUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 菜单树列表
@@ -62,6 +59,11 @@ public class Menu implements Serializable {
     @ApiModelProperty("子菜单列表")
     private List<Menu> children;
 
+    public Menu(String id) {
+        this.id = id;
+        this.children = new ArrayList<>();
+    }
+
     public Menu(Permission p, boolean hasChildren) {
         this.id = p.getId();
         this.name = p.getName();
@@ -82,11 +84,12 @@ public class Menu implements Serializable {
     }
 
     /**
-     * 构建菜单属性结构list
+     * 构建菜单属性结构list（之前的算法，很low）
      *
      * @param list
      * @return
      */
+    @Deprecated
     public static List<Menu> tree(List<Permission> list) {
         List<Menu> resultList = new ArrayList<>();
         //构建菜单属性结构
@@ -128,6 +131,68 @@ public class Menu implements Serializable {
             }
         }
         return resultList;
+    }
+
+    /**
+     * 构建菜单属性结构list:优化算法
+     *
+     * @param list
+     * @return
+     */
+    public static List<Menu> tree2(List<Permission> list) {
+        // 检查列表为空
+        if (CollectionUtils.isEmpty(list)) {
+            return Collections.emptyList();
+        }
+        //跟阶段列表
+        List<Menu> rootList = new ArrayList<>();
+        Map<String, Menu> menuMap = new HashMap<>(list.size());
+        for (Permission permission : list) {
+            //构造菜单VO
+            String permissionId = permission.getId();
+            Menu menu = menuMap.get(permissionId);
+            if (Objects.isNull(menu)) {
+                menu = new Menu(permission, true);
+                menuMap.put(permissionId, menu);
+            } else {
+                //补全菜单信息
+                menu.fullInfo(permission);
+            }
+            //判断是否有父菜单
+            String pid = permission.getPid();
+            if (StringUtils.isEmpty(pid) || "0".equals(pid)) {
+                //当前节点为根阶段
+                rootList.add(menu);
+            } else {
+                //判断menuMap中是否有该父节点
+                Menu parentMenu = menuMap.get(pid);
+                if (Objects.isNull(parentMenu)) {
+                    //构建父节点
+                    parentMenu = new Menu(pid);
+                    //将父节点添加到menuMap
+                    menuMap.put(pid, parentMenu);
+                }
+                //将当前阶段添加到父节点下
+                parentMenu.getChildren().add(menu);
+            }
+        }
+        //返回根节点列表
+        return rootList;
+    }
+
+    private void fullInfo(Permission p) {
+        this.name = p.getName();
+        this.description = p.getDescription();
+        this.url = p.getUrl();
+        this.path = p.getPath();
+        this.component = p.getComponent();
+        this.pid = p.getPid();
+        this.iconCls = p.getIconCls();
+        this.keepAlive = p.getKeepAlive();
+        this.requireAuth = p.getRequireAuth();
+        this.isMenu = p.getIsMenu();
+        this.isPage = p.getIsPage();
+        this.currLevel = p.getCurrLevel();
     }
 
     /**

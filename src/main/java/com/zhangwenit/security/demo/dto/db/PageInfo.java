@@ -83,11 +83,9 @@ public class PageInfo<T> implements IPage<T> {
     /**
      * 分页及排序构造
      *
-     * @param current 当前页
-     * @param size    每页显示条数
      */
-    public PageInfo(long current, long size, BaseCriteria criteria) {
-        this(current, size, 0);
+    public PageInfo(BaseCriteria criteria) {
+        this(criteria.getCurrentPage(), criteria.getPageSize(), 0);
         if (criteria.getSortOrder().equals(DictEnum.SortOrder.ASC)) {
             addOrder(OrderItem.asc(CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, criteria.getSortField())));
         } else {
